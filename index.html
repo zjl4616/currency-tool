@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇率计算器</title>
+    <style>
+        :root {
+            --bg-color: #d1d5db;
+            --card-bg: #f2f2f7;
+            --item-bg: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #8e8e93;
+            --accent-color: #007aff;
+            --keypad-bg: #e5e5ea;
+            --key-bg: #ffffff;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .app-container {
+            width: 360px; /* 稍微加宽以容纳下拉箭头 */
+            height: 660px;
+            background-color: var(--card-bg);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.3);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 1. 顶部区域 */
+        .header {
+            height: 80px;
+            background: #fff;
+            border-bottom: 1px solid #c6c6c8;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .header-top-row {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px;
+            box-sizing: border-box;
+            position: absolute;
+            top: 8px;
+        }
+
+        .app-title { font-size: 14px; font-weight: 700; color: #333; }
+        
+        .refresh-icon {
+            cursor: pointer; font-size: 14px; color: var(--accent-color); padding: 5px;
+            transition: transform 0.3s;
+        }
+        .refresh-icon:hover { transform: rotate(180deg); }
+
+        .hero-rate {
+            font-size: 22px; font-weight: 700; color: var(--accent-color);
+            margin-top: 12px; font-family: "SF Mono", monospace; letter-spacing: -0.5px;
+        }
+
+        .meta-info {
+            font-size: 10px; color: #aaa; margin-top: 4px; display: flex; gap: 10px;
+        }
+
+        /* 2. 列表区域 */
+        .currency-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .currency-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 15px; /* Padding移交给内部元素 */
+            border-bottom: 1px solid #d1d1d6;
+            background: var(--item-bg);
+            height: 60px;
+            box-sizing: border-box;
+            transition: background 0.1s;
+        }
+        
+        .currency-item.active {
+            background-color: #fff;
+            border-left: 4px solid var(--accent-color);
+            background-image: linear-gradient(to right, #f0f8ff, #fff);
+        }
+
+        /* 左侧：可点击的下拉区域 */
+        .left-part { 
+            display: flex; align-items: center; gap: 8px; 
+            height: 100%;
+            position: relative;
+            cursor: pointer;
+            padding-right: 10px; /* 给下拉箭头留空间 */
+        }
+        
+        /* 隐藏的 Select，覆盖在左侧区域 */
+        .currency-select {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; /* 透明，但可点击 */
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        /* 视觉层 */
+        .flag-img {
+            width: 36px; height: 24px;
+            object-fit: cover; border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .code-group { display: flex; flex-direction: column; }
+        .code { font-size: 15px; font-weight: 600; color: #000; display: flex; align-items: center; gap: 3px; }
+        .down-arrow { font-size: 10px; color: #bbb; } /* 下拉指示箭头 */
+        .name { font-size: 11px; color: #888; }
+
+        /* 右侧：金额 */
+        .right-part { 
+            text-align: right; display: flex; flex-direction: column; align-items: flex-end; 
+            flex: 1; cursor: pointer; height: 100%; justify-content: center;
+        }
+        .amount {
+            font-size: 19px;
+            font-family: "SF Mono", "Consolas", monospace;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .currency-item.active .amount { color: var(--accent-color); font-size: 21px; }
+        .unit-rate { font-size: 11px; color: #8e8e93; margin-top: 2px; font-family: "SF Mono", monospace; }
+        .currency-item.active .unit-rate { color: var(--accent-color); opacity: 0.8; }
+
+        /* 3. 键盘区域 */
+        .keypad {
+            height: 260px;
+            background-color: var(--keypad-bg);
+            padding: 10px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            border-top: 1px solid #b5b5b5;
+            box-sizing: border-box;
+        }
+
+        .key {
+            background-color: var(--key-bg);
+            border: 1px solid #aeb0b2;
+            border-radius: 6px;
+            font-size: 20px;
+            color: #000;
+            cursor: pointer;
+            box-shadow: 0 2px 0 #898a8d;
+            display: flex; justify-content: center; align-items: center;
+            transition: all 0.05s;
+        }
+        .key:hover { background-color: #fcfcfc; }
+        .key:active { transform: translateY(2px); box-shadow: none; border-bottom-width: 1px; }
+
+        .key.operator { background-color: #ff9f0a; color: white; border-color: #c57a03; box-shadow: 0 2px 0 #965d02; }
+        .key.operator:hover { background-color: #ffb03b; }
+        .key.top-row { background-color: #d1d1d6; border-color: #aeb0b5; }
+        .key.clear { background-color: #ff3b30; color: white; border-color: #b92017; box-shadow: 0 2px 0 #8e1811; }
+        .key.span-2 { grid-column: span 2; }
+        .key.blue-equal { grid-row: span 2; background-color: #007aff; color: white; border-color: #0056b3; box-shadow: 0 2px 0 #003a78; }
+        .key.blue-equal:hover { background-color: #1a88ff; }
+
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-top-row">
+            <span class="app-title">汇率计算器</span>
+            <span class="refresh-icon" onclick="fetchRates(true)" title="点击刷新">↻</span>
+        </div>
+        <div class="hero-rate" id="heroRate">Loading...</div>
+        <div class="meta-info" id="metaInfo">
+            <span>来源: --</span>
+            <span>更新: --:--</span>
+        </div>
+    </div>
+    
+    <ul class="currency-list" id="currencyList">
+        </ul>
+
+    <div class="keypad">
+        <button class="key clear" onclick="clearAll()">AC</button>
+        <button class="key top-row" onclick="backspace()">⌫</button>
+        <button class="key operator" onclick="input('/')">÷</button>
+        <button class="key operator" onclick="input('*')">×</button>
+        
+        <button class="key" onclick="input('7')">7</button>
+        <button class="key" onclick="input('8')">8</button>
+        <button class="key" onclick="input('9')">9</button>
+        <button class="key operator" onclick="input('-')">-</button>
+        
+        <button class="key" onclick="input('4')">4</button>
+        <button class="key" onclick="input('5')">5</button>
+        <button class="key" onclick="input('6')">6</button>
+        <button class="key operator" onclick="input('+')">+</button>
+        
+        <button class="key" onclick="input('1')">1</button>
+        <button class="key" onclick="input('2')">2</button>
+        <button class="key" onclick="input('3')">3</button>
+        <button class="key blue-equal" onclick="enterKey()">=</button>
+        
+        <button class="key span-2" style="grid-row-start: 5;" onclick="input('0')">0</button>
+        <button class="key" style="grid-row-start: 5;" onclick="input('.')">.</button>
+    </div>
+</div>
+
+<script>
+    // --- 1. 全球币种数据库 (20种) ---
+    // flag code 对应 flagcdn.com (通常是2位国家代码)
+    const currencyPool = [
+        { code: 'CNY', name: '人民币', flag: 'cn' },
+        { code: 'USD', name: '美元', flag: 'us' },
+        { code: 'EUR', name: '欧元', flag: 'eu' },
+        { code: 'HKD', name: '港币', flag: 'hk' },
+        { code: 'JPY', name: '日元', flag: 'jp' },
+        { code: 'GBP', name: '英镑', flag: 'gb' },
+        { code: 'AUD', name: '澳元', flag: 'au' },
+        { code: 'CAD', name: '加元', flag: 'ca' },
+        { code: 'KRW', name: '韩元', flag: 'kr' },
+        { code: 'SGD', name: '新加坡元', flag: 'sg' },
+        { code: 'THB', name: '泰铢', flag: 'th' },
+        { code: 'CHF', name: '瑞士法郎', flag: 'ch' },
+        { code: 'MYR', name: '林吉特', flag: 'my' },
+        { code: 'TWD', name: '新台币', flag: 'tw' },
+        { code: 'NZD', name: '新西兰元', flag: 'nz' },
+        { code: 'VND', name: '越南盾', flag: 'vn' },
+        { code: 'INR', name: '印度卢比', flag: 'in' },
+        { code: 'RUB', name: '俄卢布', flag: 'ru' },
+        { code: 'MOP', name: '澳门元', flag: 'mo' },
+        { code: 'PHP', name: '比索', flag: 'ph' }
+    ];
+
+    // 用户当前界面显示的 5 个国家 (存储的是 Pool 中的索引或对象)
+    let userList = [
+        currencyPool[0], // CNY
+        currencyPool[1], // USD
+        currencyPool[2], // EUR
+        currencyPool[3], // HKD
+        currencyPool[4]  // JPY
+    ];
+
+    let rates = {}; 
+    let currentInput = "0"; 
+    let activeCurrency = "CNY";
+
+    // --- 2. 获取汇率 ---
+    async function fetchRates(isManual = false) {
+        const heroEl = document.getElementById('heroRate');
+        const metaEl = document.getElementById('metaInfo');
+        if(isManual) heroEl.innerText = "刷新中...";
+
+        try {
+            const timestamp = new Date().getTime();
+            const res = await fetch(`https://open.er-api.com/v6/latest/CNY?_=${timestamp}`);
+            const data = await res.json();
+
+            if (data && data.result === "success") {
+                rates = data.rates;
+                
+                // 1 USD = ? CNY
+                const usdToCny = (1 / rates['USD']);
+                heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY`;
+
+                // 时间
+                const updateTime = new Date(data.time_last_update_unix * 1000);
+                const month = (updateTime.getMonth() + 1).toString().padStart(2, '0');
+                const day = updateTime.getDate().toString().padStart(2, '0');
+                const hour = updateTime.getHours().toString().padStart(2, '0');
+                const min = updateTime.getMinutes().toString().padStart(2, '0');
+                
+                metaEl.innerHTML = `<span>来源: Exchangerate-API</span> <span>|</span> <span>更新: ${month}-${day} ${hour}:${min}</span>`;
+
+                renderList();
+            }
+        } catch (e) {
+            heroEl.innerText = "网络异常";
+            metaEl.innerHTML = "<span>离线数据</span>";
+        }
+    }
+
+    // --- 3. 渲染列表 ---
+    const listEl = document.getElementById('currencyList');
+
+    function renderList() {
+        listEl.innerHTML = '';
+        
+        let baseValue = 0;
+        let isEquation = false;
+        try {
+            let clean = currentInput;
+            if (/[+\-*/]/.test(clean)) isEquation = true;
+            if (['+', '-', '*', '/', '.'].includes(clean.slice(-1))) clean = clean.slice(0, -1);
+            baseValue = clean ? (eval(clean) || 0) : 0;
+        } catch (e) {}
+
+        userList.forEach((curr, index) => {
+            const li = document.createElement('li');
+            li.className = `currency-item ${curr.code === activeCurrency ? 'active' : ''}`;
+            
+            // 计算金额
+            let mainDisplay = "";
+            let subDisplay = "";
+
+            if (curr.code === activeCurrency) {
+                mainDisplay = currentInput;
+                if (isEquation) subDisplay = `= ${formatNum(baseValue)}`;
+                else subDisplay = "当前基准";
+            } else {
+                const rateToBase = rates[activeCurrency] || 1;
+                const rateToTarget = rates[curr.code] || 1;
+                if (rateToBase && rateToTarget) {
+                    const realRate = rateToTarget / rateToBase;
+                    const val = baseValue * realRate;
+                    mainDisplay = formatNum(val);
+                    subDisplay = `1 ${activeCurrency} ≈ ${realRate.toFixed(4)} ${curr.code}`;
+                } else {
+                    mainDisplay = "-";
+                    subDisplay = "---";
+                }
+            }
+
+            const flagUrl = `https://flagcdn.com/w80/${curr.flag}.png`;
+
+            // 构建下拉菜单的选项 HTML
+            // 默认选中当前的 curr.code
+            let optionsHtml = '';
+            currencyPool.forEach(p => {
+                const selected = p.code === curr.code ? 'selected' : '';
+                optionsHtml += `<option value="${p.code}" ${selected}>${p.flag.toUpperCase()} ${p.name} - ${p.code}</option>`;
+            });
+
+            li.innerHTML = `
+                <div class="left-part">
+                    <select class="currency-select" onchange="changeRowCurrency(${index}, this.value)">
+                        ${optionsHtml}
+                    </select>
+                    
+                    <img src="${flagUrl}" class="flag-img">
+                    <div class="code-group">
+                        <span class="code">${curr.code} <span class="down-arrow">▼</span></span>
+                        <span class="name">${curr.name}</span>
+                    </div>
+                </div>
+                
+                <div class="right-part" onclick="setFocus('${curr.code}')">
+                    <div class="amount">${mainDisplay}</div>
+                    <div class="unit-rate">${subDisplay}</div>
+                </div>
+            `;
+            listEl.appendChild(li);
+        });
+    }
+
+    // --- 4. 交互逻辑 ---
+
+    // 用户通过下拉菜单更换了某一行
+    window.changeRowCurrency = function(rowIndex, newCode) {
+        // 在 Pool 中找到这个新货币对象
+        const newCurrency = currencyPool.find(c => c.code === newCode);
+        if (!newCurrency) return;
+
+        // 如果换掉的是当前正在输入的行，则更新 activeCurrency
+        if (userList[rowIndex].code === activeCurrency) {
+            activeCurrency = newCode;
+        }
+
+        // 更新列表
+        userList[rowIndex] = newCurrency;
+        renderList();
+    };
+
+    // 点击金额区域设定焦点
+    window.setFocus = function(code) {
+        if (activeCurrency === code) return;
+        
+        let val = 0;
+        try {
+            let clean = currentInput;
+            if (['+', '-', '*', '/', '.'].includes(clean.slice(-1))) clean = clean.slice(0, -1);
+            val = clean ? eval(clean) : 0;
+        } catch(e){}
+
+        const oldRate = rates[activeCurrency] || 1;
+        const newRate = rates[code] || 1;
+        if (oldRate && newRate) {
+            const newVal = val * (newRate / oldRate);
+            currentInput = parseFloat(newVal.toFixed(4)).toString();
+        }
+        activeCurrency = code;
+        renderList();
+    };
+
+    function formatNum(num) {
+        if (num === 0) return "0";
+        if (num > 1000000000) return "过大"; 
+        return num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+    }
+
+    function input(char) {
+        const ops = ['+', '-', '*', '/', '.'];
+        const last = currentInput.slice(-1);
+        if (ops.includes(char)) {
+            if (ops.includes(last)) currentInput = currentInput.slice(0, -1) + char;
+            else currentInput += char;
+        } else {
+            if (currentInput === "0") currentInput = char;
+            else currentInput += char;
+        }
+        renderList();
+    }
+    
+    function backspace() {
+        currentInput = currentInput.toString().slice(0, -1);
+        if (!currentInput) currentInput = "0";
+        renderList();
+    }
+
+    function clearAll() { currentInput = "0"; renderList(); }
+    
+    function enterKey() {
+        try {
+            let clean = currentInput;
+            if (['+', '-', '*', '/', '.'].includes(clean.slice(-1))) clean = clean.slice(0, -1);
+            currentInput = parseFloat(eval(clean).toFixed(4)).toString();
+            renderList();
+        } catch(e){}
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (/[0-9\.\+\-\*\/]/.test(e.key)) { e.preventDefault(); input(e.key); }
+        if (e.key === 'Backspace') backspace();
+        if (e.key === 'Escape') clearAll();
+        if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); enterKey(); }
+    });
+
+    // 初始化
+    fetchRates();
+
+</script>
+</body>
+</html>
