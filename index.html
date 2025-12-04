@@ -28,11 +28,11 @@
         }
 
         .app-container {
-            width: 360px; /* 稍微加宽以容纳下拉箭头 */
-            height: 660px;
+            width: 360px;
+            height: 680px; /* 高度微调以适配页脚 */
             background-color: var(--card-bg);
             box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-            border-radius: 20px;
+            border-radius: 24px; /* 圆角稍微加大一点，更圆润 */
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -59,10 +59,11 @@
             padding: 0 15px;
             box-sizing: border-box;
             position: absolute;
-            top: 8px;
+            top: 10px;
         }
 
-        .app-title { font-size: 14px; font-weight: 700; color: #333; }
+        /* 标题字号缩小至 11px，颜色变淡 */
+        .app-title { font-size: 11px; font-weight: 600; color: #999; letter-spacing: 0.5px; }
         
         .refresh-icon {
             cursor: pointer; font-size: 14px; color: var(--accent-color); padding: 5px;
@@ -70,13 +71,14 @@
         }
         .refresh-icon:hover { transform: rotate(180deg); }
 
+        /* 增加 margin-top 防止挡住标题 */
         .hero-rate {
             font-size: 22px; font-weight: 700; color: var(--accent-color);
-            margin-top: 12px; font-family: "SF Mono", monospace; letter-spacing: -0.5px;
+            margin-top: 18px; font-family: "SF Mono", monospace; letter-spacing: -0.5px;
         }
 
         .meta-info {
-            font-size: 10px; color: #aaa; margin-top: 4px; display: flex; gap: 10px;
+            font-size: 10px; color: #aaa; margin-top: 4px; display: flex; gap: 8px;
         }
 
         /* 2. 列表区域 */
@@ -92,7 +94,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 15px; /* Padding移交给内部元素 */
+            padding: 0 15px;
             border-bottom: 1px solid #d1d1d6;
             background: var(--item-bg);
             height: 60px;
@@ -106,36 +108,30 @@
             background-image: linear-gradient(to right, #f0f8ff, #fff);
         }
 
-        /* 左侧：可点击的下拉区域 */
         .left-part { 
-            display: flex; align-items: center; gap: 8px; 
+            display: flex; align-items: center; gap: 10px; 
             height: 100%;
             position: relative;
             cursor: pointer;
-            padding-right: 10px; /* 给下拉箭头留空间 */
+            padding-right: 15px;
         }
         
-        /* 隐藏的 Select，覆盖在左侧区域 */
+        /* 下拉菜单覆盖层 */
         .currency-select {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; /* 透明，但可点击 */
-            cursor: pointer;
-            z-index: 2;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer; z-index: 2;
         }
 
-        /* 视觉层 */
         .flag-img {
             width: 36px; height: 24px;
-            object-fit: cover; border-radius: 3px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+            object-fit: cover; border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
         }
         .code-group { display: flex; flex-direction: column; }
-        .code { font-size: 15px; font-weight: 600; color: #000; display: flex; align-items: center; gap: 3px; }
-        .down-arrow { font-size: 10px; color: #bbb; } /* 下拉指示箭头 */
+        .code { font-size: 15px; font-weight: 600; color: #000; display: flex; align-items: center; gap: 4px; }
+        .down-arrow { font-size: 8px; color: #ccc; } 
         .name { font-size: 11px; color: #888; }
 
-        /* 右侧：金额 */
         .right-part { 
             text-align: right; display: flex; flex-direction: column; align-items: flex-end; 
             flex: 1; cursor: pointer; height: 100%; justify-content: center;
@@ -152,7 +148,7 @@
 
         /* 3. 键盘区域 */
         .keypad {
-            height: 260px;
+            height: 250px;
             background-color: var(--keypad-bg);
             padding: 10px;
             display: grid;
@@ -184,6 +180,24 @@
         .key.span-2 { grid-column: span 2; }
         .key.blue-equal { grid-row: span 2; background-color: #007aff; color: white; border-color: #0056b3; box-shadow: 0 2px 0 #003a78; }
         .key.blue-equal:hover { background-color: #1a88ff; }
+
+        /* 4. 高大上署名栏 */
+        .app-footer {
+            height: 30px;
+            background-color: var(--keypad-bg); /* 与键盘背景融为一体 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+            /* 字体设计 */
+            font-size: 9px;
+            color: #a0a0a5; /* 极淡的灰色，不抢眼 */
+            font-weight: 500;
+            letter-spacing: 1.5px; /* 宽字间距是高级感的关键 */
+            text-transform: uppercase; /* 英文全大写 */
+            padding-bottom: 5px;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
     </style>
 </head>
@@ -229,11 +243,14 @@
         <button class="key span-2" style="grid-row-start: 5;" onclick="input('0')">0</button>
         <button class="key" style="grid-row-start: 5;" onclick="input('.')">.</button>
     </div>
+
+    <div class="app-footer">
+        DESIGNED BY 张金龙
+    </div>
 </div>
 
 <script>
-    // --- 1. 全球币种数据库 (20种) ---
-    // flag code 对应 flagcdn.com (通常是2位国家代码)
+    // 20+ 国家/地区数据
     const currencyPool = [
         { code: 'CNY', name: '人民币', flag: 'cn' },
         { code: 'USD', name: '美元', flag: 'us' },
@@ -257,7 +274,6 @@
         { code: 'PHP', name: '比索', flag: 'ph' }
     ];
 
-    // 用户当前界面显示的 5 个国家 (存储的是 Pool 中的索引或对象)
     let userList = [
         currencyPool[0], // CNY
         currencyPool[1], // USD
@@ -270,7 +286,6 @@
     let currentInput = "0"; 
     let activeCurrency = "CNY";
 
-    // --- 2. 获取汇率 ---
     async function fetchRates(isManual = false) {
         const heroEl = document.getElementById('heroRate');
         const metaEl = document.getElementById('metaInfo');
@@ -284,11 +299,9 @@
             if (data && data.result === "success") {
                 rates = data.rates;
                 
-                // 1 USD = ? CNY
                 const usdToCny = (1 / rates['USD']);
                 heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY`;
 
-                // 时间
                 const updateTime = new Date(data.time_last_update_unix * 1000);
                 const month = (updateTime.getMonth() + 1).toString().padStart(2, '0');
                 const day = updateTime.getDate().toString().padStart(2, '0');
@@ -305,7 +318,6 @@
         }
     }
 
-    // --- 3. 渲染列表 ---
     const listEl = document.getElementById('currencyList');
 
     function renderList() {
@@ -324,7 +336,6 @@
             const li = document.createElement('li');
             li.className = `currency-item ${curr.code === activeCurrency ? 'active' : ''}`;
             
-            // 计算金额
             let mainDisplay = "";
             let subDisplay = "";
 
@@ -348,8 +359,7 @@
 
             const flagUrl = `https://flagcdn.com/w80/${curr.flag}.png`;
 
-            // 构建下拉菜单的选项 HTML
-            // 默认选中当前的 curr.code
+            // 下拉菜单逻辑
             let optionsHtml = '';
             currencyPool.forEach(p => {
                 const selected = p.code === curr.code ? 'selected' : '';
@@ -361,7 +371,6 @@
                     <select class="currency-select" onchange="changeRowCurrency(${index}, this.value)">
                         ${optionsHtml}
                     </select>
-                    
                     <img src="${flagUrl}" class="flag-img">
                     <div class="code-group">
                         <span class="code">${curr.code} <span class="down-arrow">▼</span></span>
@@ -378,28 +387,18 @@
         });
     }
 
-    // --- 4. 交互逻辑 ---
-
-    // 用户通过下拉菜单更换了某一行
     window.changeRowCurrency = function(rowIndex, newCode) {
-        // 在 Pool 中找到这个新货币对象
         const newCurrency = currencyPool.find(c => c.code === newCode);
         if (!newCurrency) return;
-
-        // 如果换掉的是当前正在输入的行，则更新 activeCurrency
         if (userList[rowIndex].code === activeCurrency) {
             activeCurrency = newCode;
         }
-
-        // 更新列表
         userList[rowIndex] = newCurrency;
         renderList();
     };
 
-    // 点击金额区域设定焦点
     window.setFocus = function(code) {
         if (activeCurrency === code) return;
-        
         let val = 0;
         try {
             let clean = currentInput;
@@ -460,7 +459,6 @@
         if (e.key === 'Enter' || e.key === '=') { e.preventDefault(); enterKey(); }
     });
 
-    // 初始化
     fetchRates();
 
 </script>
