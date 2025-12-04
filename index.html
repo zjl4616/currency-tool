@@ -29,10 +29,10 @@
 
         .app-container {
             width: 360px;
-            height: 680px; /* 高度微调以适配页脚 */
+            height: 680px; 
             background-color: var(--card-bg);
             box-shadow: 0 30px 60px rgba(0,0,0,0.3);
-            border-radius: 24px; /* 圆角稍微加大一点，更圆润 */
+            border-radius: 24px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -62,7 +62,6 @@
             top: 10px;
         }
 
-        /* 标题字号缩小至 11px，颜色变淡 */
         .app-title { font-size: 11px; font-weight: 600; color: #999; letter-spacing: 0.5px; }
         
         .refresh-icon {
@@ -71,7 +70,6 @@
         }
         .refresh-icon:hover { transform: rotate(180deg); }
 
-        /* 增加 margin-top 防止挡住标题 */
         .hero-rate {
             font-size: 22px; font-weight: 700; color: var(--accent-color);
             margin-top: 18px; font-family: "SF Mono", monospace; letter-spacing: -0.5px;
@@ -101,6 +99,11 @@
             box-sizing: border-box;
             transition: background 0.1s;
         }
+
+        /* 【核心修复】去掉最后一项的下边框，避免出现双线 */
+        .currency-item:last-child {
+            border-bottom: none;
+        }
         
         .currency-item.active {
             background-color: #fff;
@@ -116,7 +119,6 @@
             padding-right: 15px;
         }
         
-        /* 下拉菜单覆盖层 */
         .currency-select {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             opacity: 0; cursor: pointer; z-index: 2;
@@ -155,7 +157,7 @@
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(5, 1fr);
             gap: 8px;
-            border-top: 1px solid #b5b5b5;
+            border-top: 1px solid #b5b5b5; /* 这里保留顶部边框 */
             box-sizing: border-box;
         }
 
@@ -181,20 +183,18 @@
         .key.blue-equal { grid-row: span 2; background-color: #007aff; color: white; border-color: #0056b3; box-shadow: 0 2px 0 #003a78; }
         .key.blue-equal:hover { background-color: #1a88ff; }
 
-        /* 4. 高大上署名栏 */
+        /* 4. 署名区域 */
         .app-footer {
             height: 30px;
-            background-color: var(--keypad-bg); /* 与键盘背景融为一体 */
+            background-color: var(--keypad-bg);
             display: flex;
             justify-content: center;
             align-items: center;
-            
-            /* 字体设计 */
             font-size: 9px;
-            color: #a0a0a5; /* 极淡的灰色，不抢眼 */
+            color: #a0a0a5;
             font-weight: 500;
-            letter-spacing: 1.5px; /* 宽字间距是高级感的关键 */
-            text-transform: uppercase; /* 英文全大写 */
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
             padding-bottom: 5px;
             font-family: -apple-system, BlinkMacSystemFont, sans-serif;
         }
@@ -250,7 +250,6 @@
 </div>
 
 <script>
-    // 20+ 国家/地区数据
     const currencyPool = [
         { code: 'CNY', name: '人民币', flag: 'cn' },
         { code: 'USD', name: '美元', flag: 'us' },
@@ -359,7 +358,6 @@
 
             const flagUrl = `https://flagcdn.com/w80/${curr.flag}.png`;
 
-            // 下拉菜单逻辑
             let optionsHtml = '';
             currencyPool.forEach(p => {
                 const selected = p.code === curr.code ? 'selected' : '';
