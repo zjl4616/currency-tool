@@ -290,77 +290,90 @@
         const metaEl = document.getElementById('metaInfo');
         if(isManual) heroEl.innerText = "刷新中...";
 
-        try {
-            const timestamp = new Date().getTime();
-            // 使用更可靠的 Frankfurter API
-            const res = await fetch(`https://api.frankfurter.app/latest?from=CNY&_=${timestamp}`);
-            const data = await res.json();
+        // 主要API：实时汇率API（每天自动更新）
+        const REAL_TIME_API = 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/cny.json';
+        
+        // 备用API：Frankfurter API
+        const BACKUP_API = 'https://api.frankfurter.app/latest?from=CNY';
+        
+        // 应急API：ExchangeRate-Host
+        const EMERGENCY_API = 'https://api.exchangerate.host/latest?base=CNY';
 
-            if (data && data.rates) {
-                // Frankfurter API返回的是以CNY为基准的汇率
-                rates = data.rates;
-                rates['CNY'] = 1; // 添加CNY自身
+        try {
+            // 尝试主API（实时更新）
+            const res = await fetch(`${REAL_TIME_API}?_=${Date.now()}`);
+            const data = await res.json();
+            
+            if (data && data.cny) {
+                // 转换数据格式：cny.usd -> 1 CNY = X USD
+                rates = {};
+                for (const [currency, rate] of Object.entries(data.cny)) {
+                    const upperCurrency = currency.toUpperCase();
+                    rates[upperCurrency] = rate;
+                }
+                rates['CNY'] = 1;
                 
                 const usdToCny = (1 / (rates['USD'] || 1));
                 heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY`;
-
-                const updateTime = new Date();
-                const month = (updateTime.getMonth() + 1).toString().padStart(2, '0');
-                const day = updateTime.getDate().toString().padStart(2, '0');
-                const hour = updateTime.getHours().toString().padStart(2, '0');
-                const min = updateTime.getMinutes().toString().padStart(2, '0');
+                metaEl.innerHTML = `<span>来源: 实时汇率API</span> <span>|</span> <span>更新: 实时数据</span>`;
                 
-                metaEl.innerHTML = `<span>来源: Frankfurter API</span> <span>|</span> <span>更新: ${month}-${day} ${hour}:${min}</span>`;
-
                 renderList();
+                return;
+            } else {
+                throw new Error('主API返回数据格式异常');
             }
         } catch (e) {
-            console.error('Frankfurter API错误:', e);
-            // 尝试备用API 1: open.er-api.com
-            try {
-                const fallbackRes = await fetch(`https://open.er-api.com/v6/latest/CNY?_=${Date.now()}`);
-                const fallbackData = await fallbackRes.json();
-                if (fallbackData && fallbackData.result === "success") {
-                    rates = fallbackData.rates;
-                    const usdToCny = (1 / (rates['USD'] || 1));
-                    // 验证数据是否合理（USD/CNY应该在6-8之间）
-                    if (usdToCny >= 6 && usdToCny <= 8) {
-                        heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY (备用数据)`;
-                        metaEl.innerHTML = `<span>来源: 备用API</span>`;
-                        renderList();
-                    } else {
-                        throw new Error('备用API数据异常');
-                    }
-                } else {
-                    throw new Error('备用API失败');
-                }
-            } catch (fallbackError) {
-                console.error('备用API错误:', fallbackError);
-                // 尝试备用API 2: exchangerate-api.com
-                try {
-                    const fallbackRes2 = await fetch(`https://api.exchangerate-api.com/v4/latest/CNY?_=${Date.now()}`);
-                    const fallbackData2 = await fallbackRes2.json();
-                    if (fallbackData2 && fallbackData2.rates) {
-                        rates = fallbackData2.rates;
-                        const usdToCny = (1 / (rates['USD'] || 1));
-                        if (usdToCny >= 6 && usdToCny <= 8) {
-                            heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY (应急数据)`;
-                            metaEl.innerHTML = `<span>来源: 应急API</span>`;
-                            renderList();
-                        } else {
-                            throw new Error('应急API数据异常');
-                        }
-                    } else {
-                        throw new Error('应急API失败');
-                    }
-                } catch (fallbackError2) {
-                    console.error('所有API都失败:', fallbackError2);
-                    heroEl.innerText = "网络异常";
-                    metaEl.innerHTML = "<span>离线数据</span>";
-                    // 使用离线数据或显示错误
-                }
-            }
+            console.warn('实时API失败，尝试备用:', e.message);
         }
+
+        // 尝试备用API
+        try {
+            const fallbackRes = await fetch(`${BACKUP_API}&_=${Date.now()}`);
+            const fallbackData = await fallbackRes.json();
+            
+            if (fallbackData && fallbackData.rates) {
+                rates = fallbackData.rates;
+                rates['CNY'] = 1;
+                
+                const usdToCny = (1 / (rates['USD'] || 1));
+                heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY (备用数据)`;
+                
+                const updateDate = fallbackData.date || new Date().toISOString().split('T')[0];
+                metaEl.innerHTML = `<span>来源: Frankfurter API</span> <span>|</span> <span>更新: ${updateDate}</span>`;
+                
+                renderList();
+                return;
+            }
+        } catch (fallbackError) {
+            console.warn('备用API失败，尝试应急:', fallbackError.message);
+        }
+
+        // 尝试应急API
+        try {
+            const emergencyRes = await fetch(`${EMERGENCY_API}&_=${Date.now()}`);
+            const emergencyData = await emergencyRes.json();
+            
+            if (emergencyData && emergencyData.success && emergencyData.rates) {
+                rates = emergencyData.rates;
+                rates['CNY'] = 1;
+                
+                const usdToCny = (1 / (rates['USD'] || 1));
+                heroEl.innerText = `1 USD ≈ ${usdToCny.toFixed(4)} CNY (应急数据)`;
+                
+                const updateDate = emergencyData.date || new Date().toISOString().split('T')[0];
+                metaEl.innerHTML = `<span>来源: ExchangeRate-Host</span> <span>|</span> <span>更新: ${updateDate}</span>`;
+                
+                renderList();
+                return;
+            }
+        } catch (emergencyError) {
+            console.error('所有API都失败:', emergencyError.message);
+        }
+
+        // 所有API都失败，显示离线数据
+        heroEl.innerText = "网络异常";
+        metaEl.innerHTML = `<span>离线数据</span>`;
+        // 可以在这里添加离线数据缓存
     }
 
     const listEl = document.getElementById('currencyList');
